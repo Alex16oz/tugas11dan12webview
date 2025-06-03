@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         var nimText by remember { mutableStateOf("") }
                         var namaText by remember { mutableStateOf("") }
-                        val programStudiList = listOf("Teknik Informatika", "Sistem Informasi", "Manajemen Informatika", "Teknik Komputer")
+                        val programStudiList = listOf("Manajemen Informatika", "Teknik Mesin", "Akuntansi", "Teknik Elektro")
                         var expandedProgramStudi by remember { mutableStateOf(false) }
                         var selectedProgramStudi by remember { mutableStateOf(programStudiList[0]) }
 

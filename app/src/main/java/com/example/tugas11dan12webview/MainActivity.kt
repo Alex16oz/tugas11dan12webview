@@ -16,11 +16,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items // Import this
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -28,19 +33,30 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.tugas11dan12webview.ui.theme.Tugas11dan12webviewTheme
 
 // Define your hex color for the TopAppBar
 val TopBarColor = Color(0xFF00BCD4) // Example: Orange color
+
+// Data class for list items
+data class Mahasiswa(
+    val nim: String,
+    val nama: String,
+    val programStudi: String,
+    val photoResId: Int // Using a drawable resource ID for the photo
+)
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +65,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Tugas11dan12webviewTheme {
+                // Sample data for the list
+                val mahasiswaList = remember {
+                    mutableStateListOf(
+                        Mahasiswa("2331730108", "Moh. Ridho Yuga P.", "Teknik Informatika", R.drawable.ic_launcher_foreground), // Replace with actual image
+                        Mahasiswa("1234567890", "Jane Doe", "Sistem Informasi", R.drawable.ic_launcher_foreground), // Replace with actual image
+                        Mahasiswa("0987654321", "John Smith", "Manajemen Informatika", R.drawable.ic_launcher_foreground) // Replace with actual image
+                    )
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
@@ -163,7 +188,22 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly // Distributes space evenly
                         ) {
-                            Button(onClick = { /*TODO: Handle Tambah action*/ }) {
+                            Button(onClick = {
+                                //TODO: Handle Tambah action - e.g., add to mahasiswaList
+                                if (nimText.isNotBlank() && namaText.isNotBlank()) {
+                                    mahasiswaList.add(
+                                        Mahasiswa(
+                                            nimText,
+                                            namaText,
+                                            selectedProgramStudi,
+                                            android.R.drawable.ic_menu_gallery // Default image, replace as needed
+                                        )
+                                    )
+                                    // Clear fields after adding
+                                    nimText = ""
+                                    namaText = ""
+                                }
+                            }) {
                                 Text("Tambah")
                             }
                             Button(onClick = { /*TODO: Handle Ubah action*/ }) {
@@ -173,6 +213,16 @@ class MainActivity : ComponentActivity() {
                                 Text("Hapus")
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // ListView to display items
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            items(mahasiswaList) { mahasiswa ->
+                                MahasiswaItemView(mahasiswa = mahasiswa)
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -180,12 +230,47 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun MahasiswaItemView(mahasiswa: Mahasiswa) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("NIM: ${mahasiswa.nim}", style = MaterialTheme.typography.bodyLarge)
+                Text("Nama: ${mahasiswa.nama}", style = MaterialTheme.typography.bodyMedium)
+                Text("Program Studi: ${mahasiswa.programStudi}", style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Image(
+                painter = painterResource(id = mahasiswa.photoResId),
+                contentDescription = "Foto ${mahasiswa.nama}",
+                modifier = Modifier.size(64.dp), // Adjust size as needed
+                contentScale = ContentScale.Crop
+            )
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, widthDp = 380)
+@Preview(showBackground = true, widthDp = 380, heightDp = 700)
 @Composable
-fun DefaultPreviewWithAllFieldsAndSpinner() {
+fun DefaultPreviewWithAllFieldsAndSpinnerAndList() {
     Tugas11dan12webviewTheme {
+        val mahasiswaList = remember {
+            mutableStateListOf(
+                Mahasiswa("2331730108", "Moh. Ridho Yuga P.", "Teknik Informatika", android.R.drawable.ic_menu_gallery),
+                Mahasiswa("1234567890", "Jane Doe", "Sistem Informasi", android.R.drawable.ic_menu_gallery),
+                Mahasiswa("0987654321", "John Smith", "Manajemen Informatika", android.R.drawable.ic_menu_gallery)
+            )
+        }
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -297,6 +382,15 @@ fun DefaultPreviewWithAllFieldsAndSpinner() {
                     }
                     Button(onClick = { /*TODO: Handle Hapus action*/ }) {
                         Text("Hapus")
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ListView to display items
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(mahasiswaList) { mahasiswa ->
+                        MahasiswaItemView(mahasiswa = mahasiswa)
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }

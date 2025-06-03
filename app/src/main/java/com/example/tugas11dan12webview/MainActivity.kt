@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.example.tugas11dan12webview.ui.theme.Tugas11dan12webviewTheme
 
 // Define your hex color for the TopAppBar
-val TopBarColor = Color(0xFFFFA500) // Example: Orange color
+val TopBarColor = Color(0xFF00BCD4) // Example: Orange color
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -154,6 +155,24 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.size(64.dp) // Adjust size as needed
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp)) // Added spacer for separation
+
+                        // Row for Tambah, Ubah, Hapus buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly // Distributes space evenly
+                        ) {
+                            Button(onClick = { /*TODO: Handle Tambah action*/ }) {
+                                Text("Tambah")
+                            }
+                            Button(onClick = { /*TODO: Handle Ubah action*/ }) {
+                                Text("Ubah")
+                            }
+                            Button(onClick = { /*TODO: Handle Hapus action*/ }) {
+                                Text("Hapus")
+                            }
+                        }
                     }
                 }
             }
@@ -170,7 +189,7 @@ fun DefaultPreviewWithAllFieldsAndSpinner() {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("My App") },
+                    title = { Text("Moh. Ridho Yuga P.  2331730108") },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = TopBarColor
                     )
@@ -261,6 +280,24 @@ fun DefaultPreviewWithAllFieldsAndSpinner() {
                         contentDescription = "Image Preview",
                         modifier = Modifier.size(70.dp)
                     )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp)) // Added spacer for separation
+
+                // Row for Tambah, Ubah, Hapus buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly // Distributes space evenly
+                ) {
+                    Button(onClick = { /*TODO: Handle Tambah action*/ }) {
+                        Text("Tambah")
+                    }
+                    Button(onClick = { /*TODO: Handle Ubah action*/ }) {
+                        Text("Ubah")
+                    }
+                    Button(onClick = { /*TODO: Handle Hapus action*/ }) {
+                        Text("Hapus")
+                    }
                 }
             }
         }

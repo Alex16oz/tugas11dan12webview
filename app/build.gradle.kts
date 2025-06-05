@@ -1,7 +1,10 @@
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    // In plugins block at the top of app/build.gradle.kts
+    kotlin("plugin.serialization") version "1.9.23" // Or your Kotlin version
 }
 
 android {
@@ -59,6 +62,8 @@ dependencies {
     // Ktor client akan ditarik secara transitif oleh BOM di atas
     val ktorVersionForSupabase = "2.3.11" // Ganti dengan versi Ktor yang sesuai/terbaru
     implementation("io.ktor:ktor-client-android:$ktorVersionForSupabase")
+    // In dependencies block
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3") // Or latest
 
     // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1") // Ganti dengan versi terbaru

@@ -2,6 +2,7 @@ package com.example.tugas11dan12webview
 
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast // Import Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -46,7 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalContext // Import LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -115,6 +116,9 @@ class MainActivity : ComponentActivity() {
                     }
                 )
 
+                // Get LocalContext for Toast messages
+                val currentContext = LocalContext.current
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
@@ -137,7 +141,7 @@ class MainActivity : ComponentActivity() {
                             onValueChange = { nimText = it },
                             label = { Text("NIM") },
                             modifier = Modifier.fillMaxWidth(),
-                            readOnly = selectedMahasiswa != null && selectedMahasiswa?.nim == nimText // Optional: Make NIM read-only when editing an existing, loaded record
+                            readOnly = selectedMahasiswa != null && selectedMahasiswa?.nim == nimText
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -160,21 +164,14 @@ class MainActivity : ComponentActivity() {
                                         mahasiswaList.sortBy { mahasiswa ->
                                             levenshtein(mahasiswa.nama.lowercase(), query)
                                         }
-                                        // After sorting, the first item is the best match.
                                         val topResult = mahasiswaList.first()
                                         selectedMahasiswa = topResult
                                         nimText = topResult.nim
-                                        // Do NOT update namaText from topResult.nama, keep user's query
                                         selectedProgramStudi = topResult.programStudi
                                         selectedImageUri = topResult.photoUri
                                     } else if (query.isEmpty()) {
-                                        // Optional: if query is empty, maybe reset sort or clear selection
-                                        // For now, do nothing to the list order if query is empty.
-                                        // You could add a default sort here, e.g., by NIM:
-                                        // mahasiswaList.sortBy { it.nim }
-                                        // selectedMahasiswa = null // And clear selection
+                                        selectedMahasiswa = null
                                     } else {
-                                        // Query is not empty, but mahasiswaList is empty.
                                         selectedMahasiswa = null
                                     }
                                 }
@@ -261,22 +258,31 @@ class MainActivity : ComponentActivity() {
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             Button(onClick = {
-                                if (nimText.isNotBlank() && namaText.isNotBlank()) { // Use namaText (search field) for nama when adding if desired, or have a separate "Nama Mahasiswa" field.
-                                    // Assuming namaText here refers to the student's actual name for adding.
-                                    // If namaText is purely for search, you'll need another state var for "student name input".
-                                    // For this implementation, let's assume namaText serves as student name for adding if no selection context.
-                                    mahasiswaList.add(
-                                        Mahasiswa(
-                                            nimText,
-                                            namaText, // Using namaText as student's name for new entry.
-                                            selectedProgramStudi,
-                                            selectedImageUri
+                                val currentNim = nimText.trim()
+                                val currentNama = namaText.trim() // Assuming namaText is for student's name when adding
+
+                                if (currentNim.isNotBlank() && currentNama.isNotBlank()) {
+                                    val isNimUnique = mahasiswaList.none { it.nim == currentNim }
+
+                                    if (isNimUnique) {
+                                        mahasiswaList.add(
+                                            Mahasiswa(
+                                                currentNim,
+                                                currentNama, // Use trimmed currentNama
+                                                selectedProgramStudi,
+                                                selectedImageUri
+                                            )
                                         )
-                                    )
-                                    nimText = ""
-                                    namaText = "" // Clear after adding
-                                    selectedImageUri = null
-                                    selectedMahasiswa = null
+                                        nimText = ""
+                                        namaText = ""
+                                        selectedImageUri = null
+                                        selectedMahasiswa = null
+                                        Toast.makeText(currentContext, "Mahasiswa berhasil ditambahkan", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(currentContext, "NIM sudah ada!", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    Toast.makeText(currentContext, "NIM dan Nama tidak boleh kosong", Toast.LENGTH_SHORT).show()
                                 }
                             }) {
                                 Text("Tambah")
@@ -285,24 +291,32 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     selectedMahasiswa?.let { currentMahasiswa ->
                                         val index = mahasiswaList.indexOf(currentMahasiswa)
-                                        // When updating, use the values from the fields.
-                                        // The student's name to be updated should come from a dedicated name field,
-                                        // or if namaText is to be used, ensure it's what the user intends for the update.
-                                        // Here, we assume nimText, selectedProgramStudi, selectedImageUri are correct.
-                                        // For 'nama', if namaText is the search query, we might need another field,
-                                        // or update with currentMahasiswa.nama if we don't want search query to overwrite it.
-                                        // Let's assume for "Ubah", the "namaText" field should contain the name to update to.
-                                        if (index != -1 && nimText.isNotBlank() && namaText.isNotBlank()) {
-                                            mahasiswaList[index] = currentMahasiswa.copy(
-                                                nim = nimText, // Allow NIM update if not read-only
-                                                nama = namaText, // Update name from namaText field
-                                                programStudi = selectedProgramStudi,
-                                                photoUri = selectedImageUri
-                                            )
-                                            nimText = ""
-                                            namaText = ""
-                                            selectedImageUri = null
-                                            selectedMahasiswa = null
+                                        val updatedNim = nimText.trim()
+                                        val updatedNama = namaText.trim() // Assuming namaText is for student's name when updating
+
+                                        if (updatedNim.isNotBlank() && updatedNama.isNotBlank()) {
+                                            // Check if the updated NIM is unique, excluding the current student being edited
+                                            val isNewNimUniqueOrSame = mahasiswaList
+                                                .filterIndexed { i, _ -> i != index } // Exclude current item for check
+                                                .none { it.nim == updatedNim }
+
+                                            if (isNewNimUniqueOrSame || updatedNim == currentMahasiswa.nim) {
+                                                mahasiswaList[index] = currentMahasiswa.copy(
+                                                    nim = updatedNim,
+                                                    nama = updatedNama,
+                                                    programStudi = selectedProgramStudi,
+                                                    photoUri = selectedImageUri
+                                                )
+                                                nimText = ""
+                                                namaText = ""
+                                                selectedImageUri = null
+                                                selectedMahasiswa = null
+                                                Toast.makeText(currentContext, "Data berhasil diubah", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(currentContext, "NIM sudah digunakan mahasiswa lain!", Toast.LENGTH_SHORT).show()
+                                            }
+                                        } else {
+                                            Toast.makeText(currentContext, "NIM dan Nama tidak boleh kosong untuk diubah", Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 },
@@ -318,6 +332,7 @@ class MainActivity : ComponentActivity() {
                                         namaText = ""
                                         selectedImageUri = null
                                         selectedMahasiswa = null
+                                        Toast.makeText(currentContext, "Data berhasil dihapus", Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 enabled = selectedMahasiswa != null
@@ -329,13 +344,13 @@ class MainActivity : ComponentActivity() {
                         Spacer(modifier = Modifier.height(16.dp))
 
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(mahasiswaList) { mahasiswa ->
+                            items(mahasiswaList) { mahasiswa -> //
                                 MahasiswaItemView(
                                     mahasiswa = mahasiswa,
                                     onClick = { selected ->
                                         selectedMahasiswa = selected
                                         nimText = selected.nim
-                                        namaText = selected.nama // Populate namaText with actual name when item clicked
+                                        namaText = selected.nama
                                         selectedProgramStudi = selected.programStudi
                                         selectedImageUri = selected.photoUri
                                     }
@@ -379,7 +394,7 @@ fun MahasiswaItemView(mahasiswa: Mahasiswa, onClick: (Mahasiswa) -> Unit) {
                 )
             } else {
                 Image(
-                    painter = painterResource(id = android.R.drawable.ic_menu_gallery),
+                    painter = painterResource(id = android.R.drawable.ic_menu_gallery), //
                     contentDescription = "Foto ${mahasiswa.nama}",
                     modifier = Modifier.size(64.dp),
                     contentScale = ContentScale.Crop
@@ -411,6 +426,8 @@ fun DefaultPreviewWithAllFieldsAndSpinnerAndList() {
         var expandedProgramStudiPreview by remember { mutableStateOf(false) }
         var selectedProgramStudiPreview by remember { mutableStateOf(programStudiListPreview[0]) }
         var selectedImageUriPreview by remember { mutableStateOf<Uri?>(null) }
+        val currentContextPreview = LocalContext.current
+
 
         Scaffold(
             topBar = {
@@ -458,7 +475,6 @@ fun DefaultPreviewWithAllFieldsAndSpinnerAndList() {
                             val topResult = mahasiswaListPreview.first()
                             selectedMahasiswaForPreview = topResult
                             nimTextPreview = topResult.nim
-                            // namaTextPreview = topResult.nama // Keep search query
                             selectedProgramStudiPreview = topResult.programStudi
                             selectedImageUriPreview = topResult.photoUri
                         }
@@ -510,7 +526,7 @@ fun DefaultPreviewWithAllFieldsAndSpinnerAndList() {
 
                     Box(modifier = Modifier
                         .size(64.dp)
-                        .clickable { /* Not interactive */ }
+                        .clickable { /* Not interactive in preview */ }
                     ) {
                         if (selectedImageUriPreview != null) {
                             AsyncImage(
@@ -518,12 +534,12 @@ fun DefaultPreviewWithAllFieldsAndSpinnerAndList() {
                                 contentDescription = "Selected Image",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
-                                error = painterResource(id = android.R.drawable.ic_menu_gallery),
-                                placeholder = painterResource(id = android.R.drawable.ic_menu_gallery)
+                                error = painterResource(id = android.R.drawable.ic_menu_gallery), //
+                                placeholder = painterResource(id = android.R.drawable.ic_menu_gallery) //
                             )
                         } else {
                             Image(
-                                painter = painterResource(id = android.R.drawable.ic_menu_gallery),
+                                painter = painterResource(id = android.R.drawable.ic_menu_gallery), //
                                 contentDescription = "Image Preview",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
@@ -539,19 +555,28 @@ fun DefaultPreviewWithAllFieldsAndSpinnerAndList() {
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Button(onClick = {
-                        if (nimTextPreview.isNotBlank() && namaTextPreview.isNotBlank()) { // Assuming namaTextPreview is student's name for adding
-                            mahasiswaListPreview.add(
-                                Mahasiswa(
-                                    nimTextPreview,
-                                    namaTextPreview,
-                                    selectedProgramStudiPreview,
-                                    selectedImageUriPreview
+                        val currentNim = nimTextPreview.trim()
+                        val currentNama = namaTextPreview.trim()
+                        if (currentNim.isNotBlank() && currentNama.isNotBlank()) {
+                            if (mahasiswaListPreview.none { it.nim == currentNim }) {
+                                mahasiswaListPreview.add(
+                                    Mahasiswa(
+                                        currentNim,
+                                        currentNama,
+                                        selectedProgramStudiPreview,
+                                        selectedImageUriPreview
+                                    )
                                 )
-                            )
-                            nimTextPreview = ""
-                            namaTextPreview = ""
-                            selectedImageUriPreview = null
-                            selectedMahasiswaForPreview = null
+                                nimTextPreview = ""
+                                namaTextPreview = ""
+                                selectedImageUriPreview = null
+                                selectedMahasiswaForPreview = null
+                                Toast.makeText(currentContextPreview, "Preview: Mahasiswa ditambahkan", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(currentContextPreview, "Preview: NIM sudah ada", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(currentContextPreview, "Preview: NIM dan Nama kosong", Toast.LENGTH_SHORT).show()
                         }
                     }) {
                         Text("Tambah")
@@ -560,17 +585,29 @@ fun DefaultPreviewWithAllFieldsAndSpinnerAndList() {
                         onClick = {
                             selectedMahasiswaForPreview?.let { current ->
                                 val index = mahasiswaListPreview.indexOf(current)
-                                if (index != -1 && nimTextPreview.isNotBlank() && namaTextPreview.isNotBlank()){
-                                    mahasiswaListPreview[index] = current.copy(
-                                        nim = nimTextPreview,
-                                        nama = namaTextPreview, // Use namaTextPreview for update
-                                        programStudi = selectedProgramStudiPreview,
-                                        photoUri = selectedImageUriPreview
-                                    )
-                                    nimTextPreview = ""
-                                    namaTextPreview = ""
-                                    selectedImageUriPreview = null
-                                    selectedMahasiswaForPreview = null
+                                val updatedNim = nimTextPreview.trim()
+                                val updatedNama = namaTextPreview.trim()
+                                if (index != -1 && updatedNim.isNotBlank() && updatedNama.isNotBlank()){
+                                    val isNewNimUniqueOrSame = mahasiswaListPreview
+                                        .filterIndexed { i, _ -> i != index }
+                                        .none { it.nim == updatedNim }
+                                    if (isNewNimUniqueOrSame || updatedNim == current.nim) {
+                                        mahasiswaListPreview[index] = current.copy(
+                                            nim = updatedNim,
+                                            nama = updatedNama,
+                                            programStudi = selectedProgramStudiPreview,
+                                            photoUri = selectedImageUriPreview
+                                        )
+                                        nimTextPreview = ""
+                                        namaTextPreview = ""
+                                        selectedImageUriPreview = null
+                                        selectedMahasiswaForPreview = null
+                                        Toast.makeText(currentContextPreview, "Preview: Data diubah", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(currentContextPreview, "Preview: NIM sudah digunakan", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    Toast.makeText(currentContextPreview, "Preview: NIM/Nama kosong untuk ubah", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
@@ -586,6 +623,7 @@ fun DefaultPreviewWithAllFieldsAndSpinnerAndList() {
                                 namaTextPreview = ""
                                 selectedImageUriPreview = null
                                 selectedMahasiswaForPreview = null
+                                Toast.makeText(currentContextPreview, "Preview: Data dihapus", Toast.LENGTH_SHORT).show()
                             }
                         },
                         enabled = selectedMahasiswaForPreview != null
@@ -596,13 +634,13 @@ fun DefaultPreviewWithAllFieldsAndSpinnerAndList() {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(mahasiswaListPreview) { mahasiswa ->
+                    items(mahasiswaListPreview) { mahasiswa -> //
                         MahasiswaItemView(
                             mahasiswa = mahasiswa,
                             onClick = { selected ->
                                 selectedMahasiswaForPreview = selected
                                 nimTextPreview = selected.nim
-                                namaTextPreview = selected.nama // Clicking item populates namaTextPreview
+                                namaTextPreview = selected.nama
                                 selectedProgramStudiPreview = selected.programStudi
                                 selectedImageUriPreview = selected.photoUri
                             }
